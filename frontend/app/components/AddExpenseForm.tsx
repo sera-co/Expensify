@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { apiService, Expense } from '../lib/api';
-import { PlusCircle, DollarSign, Tag, FileText } from 'lucide-react';
+import { PlusCircle, DollarSign, Tag, FileText, IndianRupee } from 'lucide-react';
 
 interface AddExpenseFormProps {
   onExpenseAdded: () => void;
@@ -84,11 +84,10 @@ export default function AddExpenseForm({ onExpenseAdded }: AddExpenseFormProps) 
                 key={value}
                 type="button"
                 onClick={() => handleCategorySelect(value)}
-                className={`p-3 rounded-2xl text-center transition-all duration-300 ${
-                  selectedCategory === value
-                    ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
-                    : 'bg-white/50 text-gray-600 hover:bg-white/80 hover:scale-105'
-                }`}
+                className={`p-3 rounded-2xl text-center transition-all duration-300 ${selectedCategory === value
+                  ? `bg-gradient-to-r ${color} text-white shadow-lg scale-105`
+                  : 'bg-white/50 text-gray-600 hover:bg-white/80 hover:scale-105'
+                  }`}
               >
                 <div className="text-lg mb-1">{icon}</div>
                 <div className="text-xs font-medium">{value}</div>
@@ -100,12 +99,12 @@ export default function AddExpenseForm({ onExpenseAdded }: AddExpenseFormProps) 
         {/* Amount Input */}
         <div>
           <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-3">
-            <DollarSign className="w-4 h-4" />
+            <IndianRupee className="w-4 h-4" />
             Amount
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <span className="text-gray-500 text-lg">$</span>
+              <span className="text-gray-500 text-lg">₹</span>
             </div>
             <input
               type="number"

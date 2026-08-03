@@ -82,10 +82,10 @@ export default function ExpenseDisplay() {
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800">Daily Breakdown</h3>
           <span className={`text-3xl font-bold ${getTotalColor(dailyData.total)}`}>
-            ${dailyData.total.toFixed(2)}
+            ₹{dailyData.total.toFixed(2)}
           </span>
         </div>
-        
+
         {dailyData.expenses.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">📊</div>
@@ -109,7 +109,7 @@ export default function ExpenseDisplay() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-red-600">${expense.amount.toFixed(2)}</div>
+                    <div className="text-lg font-bold text-red-600">₹{expense.amount.toFixed(2)}</div>
                     <div className="text-xs text-gray-500">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
@@ -132,10 +132,10 @@ export default function ExpenseDisplay() {
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800">Weekly Overview</h3>
           <span className={`text-3xl font-bold ${getTotalColor(weeklyData.total)}`}>
-            ${weeklyData.total.toFixed(2)}
+            ₹{weeklyData.total.toFixed(2)}
           </span>
         </div>
-        
+
         <div className="space-y-4">
           {categories.map(([category, amount]) => (
             <div key={category} className="glass-card rounded-2xl p-4 hover-lift">
@@ -146,10 +146,10 @@ export default function ExpenseDisplay() {
                   </div>
                   <span className="font-semibold text-gray-800">{category}</span>
                 </div>
-                <span className="text-lg font-bold text-red-600">${amount.toFixed(2)}</span>
+                <span className="text-lg font-bold text-red-600">₹{amount.toFixed(2)}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   className={`h-2 rounded-full bg-gradient-to-r ${categoryColors[category] || 'from-gray-400 to-slate-500'}`}
                   style={{ width: `${(amount / maxAmount) * 100}%` }}
                 />
@@ -174,10 +174,10 @@ export default function ExpenseDisplay() {
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-800">Monthly Analytics</h3>
           <span className={`text-3xl font-bold ${getTotalColor(monthlyData.total)}`}>
-            ${monthlyData.total.toFixed(2)}
+            ₹{monthlyData.total.toFixed(2)}
           </span>
         </div>
-        
+
         <div className="grid gap-4">
           {categories.map(([category, amount]) => (
             <div key={category} className="glass-card rounded-2xl p-4 hover-lift">
@@ -194,7 +194,7 @@ export default function ExpenseDisplay() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-xl font-bold text-red-600">${amount.toFixed(2)}</div>
+                  <div className="text-xl font-bold text-red-600">₹{amount.toFixed(2)}</div>
                   <div className="text-xs text-gray-500">This month</div>
                 </div>
               </div>
@@ -238,11 +238,10 @@ export default function ExpenseDisplay() {
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold capitalize transition-all duration-300 flex-1 ${
-              viewMode === mode
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-600 hover:text-gray-800 hover:bg-white/80'
-            }`}
+            className={`flex items-center gap-2 px-4 py-3 rounded-xl font-semibold capitalize transition-all duration-300 flex-1 ${viewMode === mode
+              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+              : 'text-gray-600 hover:text-gray-800 hover:bg-white/80'
+              }`}
           >
             {viewModeIcons[mode]}
             {mode}
