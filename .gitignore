@@ -12,3 +12,5 @@ npm-debug.log*
 
 # Environment
 .env
+backendvenv/
+*.db
