@@ -95,7 +95,7 @@ export default function ExpenseDisplay() {
         ) : (
           <div className="space-y-4">
             {dailyData.expenses.map((expense, index) => (
-              <div key={index} className="glass-card rounded-2xl p-4 hover-lift">
+              <div key={expense.id} className="glass-card rounded-2xl p-4 hover-lift">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-xl bg-gradient-to-r ${categoryColors[expense.category] || 'from-gray-400 to-slate-500'}`}>
@@ -110,7 +110,7 @@ export default function ExpenseDisplay() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-red-600">₹{expense.amount.toFixed(2)}</div>
-                    <div className="text-xs text-gray-500">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div className="text-xs text-gray-500">{new Date(expense.created_ats).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                   </div>
                 </div>
               </div>
