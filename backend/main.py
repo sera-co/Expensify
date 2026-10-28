@@ -4,7 +4,7 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -12,8 +12,8 @@ from database import Base, ExpenseRecord, engine, get_db
 
 
 class Expense(BaseModel):
-    category: str
-    amount: float
+    category: str = Field(min_length=1)
+    amount: float = Field(gt=0)  # reject 0 and negative amounts
     description: Optional[str] = None
     date: Optional[date] = None
 

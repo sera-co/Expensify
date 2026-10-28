@@ -1,10 +1,18 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+// What the form sends when adding an expense
 export interface Expense {
   category: string;
   amount: number;
   description?: string;
   date?: string;
+}
+
+// What the backend returns for a stored expense
+export interface StoredExpense extends Expense {
+  id: number;
+  date: string;
+  created_at: string; // ISO timestamp of when the expense was recorded
 }
 
 export interface DateRequest {
@@ -14,7 +22,7 @@ export interface DateRequest {
 export interface DailyExpenseResponse {
   date: string;
   total: number;
-  expenses: Expense[];
+  expenses: StoredExpense[];
 }
 
 export interface WeeklyExpenseResponse {
