@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { apiService, Expense } from '../lib/api';
+import { apiService, ApiError, Expense } from '../lib/api';
 import { PlusCircle, DollarSign, Tag, FileText, IndianRupee } from 'lucide-react';
 
 interface AddExpenseFormProps {
@@ -29,6 +29,12 @@ export default function AddExpenseForm({ onExpenseAdded }: AddExpenseFormProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (formData.amount <= 0) {
+      alert('Please enter an amount greater than 0.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -38,6 +44,8 @@ export default function AddExpenseForm({ onExpenseAdded }: AddExpenseFormProps) 
       onExpenseAdded();
     } catch (error) {
       console.error('Error adding expense:', error);
+      // An expired login is handled by the page (it returns to the login screen)
+      if (error instanceof ApiError && error.status === 401) return;
       alert('Failed to add expense. Please try again.');
     } finally {
       setLoading(false);
@@ -112,7 +120,7 @@ export default function AddExpenseForm({ onExpenseAdded }: AddExpenseFormProps) 
               value={formData.amount}
               onChange={handleChange}
               step="0.01"
-              min="0"
+              min="0.01"
               className="w-full pl-10 pr-4 py-4 bg-white/50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-lg font-semibold"
               placeholder="0.00"
               required

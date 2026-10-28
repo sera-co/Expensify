@@ -1,8 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiService, DailyExpenseResponse, WeeklyExpenseResponse, MonthlyExpenseResponse } from '../lib/api';
-import { Calendar, RefreshCw, BarChart3, PieChart, TrendingUp, Eye } from 'lucide-react';
+import {
+  apiService,
+  DailyExpenseResponse,
+  WeeklyExpenseResponse,
+  MonthlyExpenseResponse,
+  StoredExpense,
+  ApiError,
+} from '../lib/api';
+import { Calendar, RefreshCw, BarChart3, PieChart, TrendingUp, Eye, Pencil, Trash2, Check, X } from 'lucide-react';
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
 
@@ -26,6 +33,8 @@ const categoryIcons: { [key: string]: string } = {
   'Other': '📦'
 };
 
+const categoryOptions = Object.keys(categoryColors);
+
 export default function ExpenseDisplay() {
   const [viewMode, setViewMode] = useState<ViewMode>('daily');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -33,6 +42,13 @@ export default function ExpenseDisplay() {
   const [weeklyData, setWeeklyData] = useState<WeeklyExpenseResponse | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlyExpenseResponse | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Edit state (daily view only)
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editCategory, setEditCategory] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -53,6 +69,7 @@ export default function ExpenseDisplay() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      if (error instanceof ApiError && error.status === 401) return;
       alert('Failed to fetch expenses. Please try again.');
     } finally {
       setLoading(false);
@@ -60,11 +77,60 @@ export default function ExpenseDisplay() {
   };
 
   useEffect(() => {
+    setEditingId(null); // leave edit mode when the view or date changes
     fetchData();
   }, [viewMode, date]);
 
   const refreshData = () => {
     fetchData();
+  };
+
+  const startEdit = (expense: StoredExpense) => {
+    setEditingId(expense.id);
+    setEditCategory(expense.category);
+    setEditAmount(String(expense.amount));
+    setEditDescription(expense.description || '');
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const saveEdit = async (expense: StoredExpense) => {
+    const amount = parseFloat(editAmount);
+    if (!amount || amount <= 0) {
+      alert('Please enter an amount greater than 0.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiService.updateExpense(expense.id, {
+        category: editCategory,
+        amount,
+        description: editDescription.trim() || undefined,
+        date: expense.date,
+      });
+      setEditingId(null);
+      await fetchData();
+    } catch (error) {
+      console.error('Error updating expense:', error);
+      if (error instanceof ApiError && error.status === 401) return;
+      alert('Failed to update expense. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteExpense = async (expense: StoredExpense) => {
+    if (!window.confirm(`Delete this ${expense.category} expense of ₹${expense.amount.toFixed(2)}?`)) {
+      return;
+    }
+    try {
+      await apiService.deleteExpense(expense.id);
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      if (error instanceof ApiError && error.status === 401) return;
+      alert('Failed to delete expense. Please try again.');
+    }
   };
 
   const getTotalColor = (total: number) => {
@@ -94,25 +160,93 @@ export default function ExpenseDisplay() {
           </div>
         ) : (
           <div className="space-y-4">
-            {dailyData.expenses.map((expense, index) => (
+            {dailyData.expenses.map((expense) => (
               <div key={expense.id} className="glass-card rounded-2xl p-4 hover-lift">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl bg-gradient-to-r ${categoryColors[expense.category] || 'from-gray-400 to-slate-500'}`}>
-                      <span className="text-white text-sm">{categoryIcons[expense.category] || '📦'}</span>
+                {editingId === expense.id ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-3">
+                      <select
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        className="flex-1 px-3 py-2 bg-white/70 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      >
+                        {categoryOptions.map((c) => (
+                          <option key={c} value={c}>{categoryIcons[c]} {c}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-28 px-3 py-2 bg-white/70 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        placeholder="Amount"
+                      />
                     </div>
-                    <div>
-                      <div className="font-semibold text-gray-800">{expense.category}</div>
-                      {expense.description && (
-                        <div className="text-sm text-gray-600">{expense.description}</div>
-                      )}
+                    <input
+                      type="text"
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      className="w-full px-3 py-2 bg-white/70 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                      placeholder="Description (optional)"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        onClick={cancelEdit}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 bg-white/60 border border-gray-200 rounded-xl hover:bg-white/90 disabled:opacity-50"
+                      >
+                        <X className="w-4 h-4" /> Cancel
+                      </button>
+                      <button
+                        onClick={() => saveEdit(expense)}
+                        disabled={saving}
+                        className="flex items-center gap-1 px-3 py-2 text-sm text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl hover:opacity-90 disabled:opacity-50"
+                      >
+                        <Check className="w-4 h-4" /> {saving ? 'Saving...' : 'Save'}
+                      </button>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-red-600">₹{expense.amount.toFixed(2)}</div>
-                    <div className="text-xs text-gray-500">{new Date(expense.created_ats).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl bg-gradient-to-r ${categoryColors[expense.category] || 'from-gray-400 to-slate-500'}`}>
+                        <span className="text-white text-sm">{categoryIcons[expense.category] || '📦'}</span>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-800">{expense.category}</div>
+                        {expense.description && (
+                          <div className="text-sm text-gray-600">{expense.description}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-red-600">₹{expense.amount.toFixed(2)}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(expense.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => startEdit(expense)}
+                          title="Edit expense"
+                          className="p-2 text-gray-500 hover:text-blue-600 hover:bg-white/70 rounded-xl transition-colors"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteExpense(expense)}
+                          title="Delete expense"
+                          className="p-2 text-gray-500 hover:text-red-600 hover:bg-white/70 rounded-xl transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>
