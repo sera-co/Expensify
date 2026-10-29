@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from datetime import date as DateType
 from typing import Optional
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func, select
@@ -233,6 +233,69 @@ def get_all_expenses(
         select(ExpenseRecord).where(ExpenseRecord.user_id == user.id).order_by(ExpenseRecord.id)
     ).all()
     return {"expenses": [r.to_dict() for r in records]}
+
+
+@app.get("/expenses")
+def get_expenses(
+    category: Optional[str] = None,
+    from_date: Optional[DateType] = None,
+    to_date: Optional[DateType] = None,
+    min_amount: Optional[float] = None,
+    max_amount: Optional[float] = None,
+    search: Optional[str] = None,
+    sort_by: str = "date",
+    sort_order: str = "desc",
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user: UserRecord = Depends(get_current_user),
+):
+    if from_date is not None and to_date is not None and from_date > to_date:
+        raise HTTPException(status_code=422, detail="from_date must be on or before to_date")
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise HTTPException(status_code=422, detail="min_amount must be less than or equal to max_amount")
+    if sort_by not in {"date", "amount", "category"}:
+        raise HTTPException(status_code=422, detail="sort_by must be one of: date, amount, category")
+    if sort_order not in {"asc", "desc"}:
+        raise HTTPException(status_code=422, detail="sort_order must be one of: asc, desc")
+
+    filters = [ExpenseRecord.user_id == user.id]
+    if category:
+        filters.append(ExpenseRecord.category == category)
+    if from_date is not None:
+        filters.append(ExpenseRecord.date >= from_date)
+    if to_date is not None:
+        filters.append(ExpenseRecord.date <= to_date)
+    if min_amount is not None:
+        filters.append(ExpenseRecord.amount >= min_amount)
+    if max_amount is not None:
+        filters.append(ExpenseRecord.amount <= max_amount)
+    if search and search.strip():
+        filters.append(ExpenseRecord.description.ilike(f"%{search.strip()}%"))
+
+    total = db.scalar(select(func.count()).select_from(ExpenseRecord).where(*filters)) or 0
+    sort_column = {
+        "date": ExpenseRecord.date,
+        "amount": ExpenseRecord.amount,
+        "category": ExpenseRecord.category,
+    }[sort_by]
+    ordering = sort_column.asc() if sort_order == "asc" else sort_column.desc()
+    statement = (
+        select(ExpenseRecord)
+        .where(*filters)
+        .order_by(ordering, ExpenseRecord.id.asc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    records = db.scalars(statement).all()
+
+    return {
+        "items": [record.to_dict() for record in records],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": (total + page_size - 1) // page_size,
+    }
 
 
 # ------------------ EDIT / DELETE (owner only) ------------------

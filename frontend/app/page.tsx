@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AddExpenseForm from './components/AddExpenseForm';
+import AllExpenses from './components/AllExpenses';
 import ExpenseDisplay from './components/ExpenseDisplay';
 import AuthForm from './components/AuthForm';
 import { apiService, getToken, getStoredUsername, clearAuth, UNAUTHORIZED_EVENT } from './lib/api';
@@ -98,6 +99,10 @@ export default function Home() {
               <div>
                 <ExpenseDisplay key={refreshTrigger} />
               </div>
+            </div>
+
+            <div className="mt-8">
+              <AllExpenses refreshTrigger={refreshTrigger} />
             </div>
 
             {/* Stats Section */}

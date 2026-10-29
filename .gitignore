@@ -17,3 +17,6 @@ backendvenv/
 .secret_key
 *.db
 backendvenv/
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -40,6 +40,27 @@ export interface MonthlyExpenseResponse {
   totals_by_category: { [category: string]: number };
 }
 
+export interface ExpenseFilters {
+  category?: string;
+  from_date?: string;
+  to_date?: string;
+  min_amount?: number;
+  max_amount?: number;
+  search?: string;
+  sort_by?: 'date' | 'amount' | 'category';
+  sort_order?: 'asc' | 'desc';
+  page?: number;
+  page_size?: number;
+}
+
+export interface PaginatedExpensesResponse {
+  items: StoredExpense[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}
+
 export interface AuthResponse {
   access_token: string;
   token_type: string;
@@ -181,6 +202,18 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ target_date: date }),
     });
+  }
+
+  // Get filtered and paginated expenses
+  async getExpenses(filters: ExpenseFilters = {}): Promise<PaginatedExpensesResponse> {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.set(key, String(value));
+      }
+    });
+    const query = params.toString();
+    return this.fetchApi(`/expenses${query ? `?${query}` : ''}`);
   }
 
   // Update an existing expense
